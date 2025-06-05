@@ -90,8 +90,6 @@ func (muxer *PSMuxer) Write(sid uint8, frame []byte, pts uint64, dts uint64) err
 		})
 	}
 
-	dts = dts * 90
-	pts = pts * 90
 	bsw := codec.NewBitStreamWriter(1024)
 	var pack PSPackHeader
 	pack.System_clock_reference_base = dts - 3600
@@ -115,13 +113,13 @@ func (muxer *PSMuxer) Write(sid uint8, frame []byte, pts uint64, dts uint64) err
 			pespkg.Data_alignment_indicator = 1
 		}
 		if first && !withaud && vcl {
-			if stream.Stream_type == uint8(PS_STREAM_H264) {
-				pespkg.Pes_payload = append(pespkg.Pes_payload, H264_AUD_NALU...)
-				peshdrlen += 6
-			} else if stream.Stream_type == uint8(PS_STREAM_H265) {
-				pespkg.Pes_payload = append(pespkg.Pes_payload, H265_AUD_NALU...)
-				peshdrlen += 7
-			}
+			// if stream.Stream_type == uint8(PS_STREAM_H264) {
+			// 	pespkg.Pes_payload = append(pespkg.Pes_payload, H264_AUD_NALU...)
+			// 	peshdrlen += 6
+			// } else if stream.Stream_type == uint8(PS_STREAM_H265) {
+			// 	pespkg.Pes_payload = append(pespkg.Pes_payload, H265_AUD_NALU...)
+			// 	peshdrlen += 7
+			// }
 		}
 		if peshdrlen+len(frame) >= 0xFFFF {
 			pespkg.PES_packet_length = 0xFFFF
