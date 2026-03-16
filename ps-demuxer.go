@@ -120,6 +120,7 @@ func (psdemuxer *PSDemuxer) Input(data []byte) error {
 			}
 			ret = psdemuxer.pkg.Psd.Decode(bs)
 		case 0x000001B9: //MPEG_program_end_code
+			bs.SkipBits(32)
 			continue
 		default:
 			if prefix_code&0xFFFFFFE0 == 0x000001C0 || prefix_code&0xFFFFFFE0 == 0x000001E0 {
@@ -160,7 +161,49 @@ func (psdemuxer *PSDemuxer) Input(data []byte) error {
 		psdemuxer.cache = nil
 	}
 
+	if mpegerr, ok := ret.(Error); ok && mpegerr.ParserError() {
+		saveReseved()
+		psdemuxer.ResyncCache()
+	}
+
 	return ret
+}
+
+func (psdemuxer *PSDemuxer) CacheLen() int {
+	return len(psdemuxer.cache)
+}
+
+func (psdemuxer *PSDemuxer) CacheHead(n int) []byte {
+	if n <= 0 || len(psdemuxer.cache) == 0 {
+		return nil
+	}
+	if n > len(psdemuxer.cache) {
+		n = len(psdemuxer.cache)
+	}
+	out := make([]byte, n)
+	copy(out, psdemuxer.cache[:n])
+	return out
+}
+
+func (psdemuxer *PSDemuxer) ResyncCache() int {
+	if len(psdemuxer.cache) < 4 {
+		return 0
+	}
+	for i := 0; i+3 < len(psdemuxer.cache); i++ {
+		if psdemuxer.cache[i] == 0x00 && psdemuxer.cache[i+1] == 0x00 && psdemuxer.cache[i+2] == 0x01 {
+			dropped := i
+			if dropped > 0 {
+				psdemuxer.cache = psdemuxer.cache[i:]
+			}
+			return dropped
+		}
+	}
+	if len(psdemuxer.cache) > 3 {
+		dropped := len(psdemuxer.cache) - 3
+		psdemuxer.cache = psdemuxer.cache[dropped:]
+		return dropped
+	}
+	return 0
 }
 
 func (psdemuxer *PSDemuxer) Flush() {

@@ -444,9 +444,9 @@ func (psm *Program_stream_map) Decode(bs *codec.BitStream) error {
 	}
 	bs.SkipBits(int(psm.Program_stream_info_length) * 8)
 	psm.Elementary_stream_map_length = bs.Uint16(16)
-	if psm.Program_stream_map_length != 6+psm.Program_stream_info_length+psm.Elementary_stream_map_length+4 {
-		return errParser
-	}
+	// if psm.Program_stream_map_length != 6+psm.Program_stream_info_length+psm.Elementary_stream_map_length+4 {
+	// 	return errParser
+	// }
 	if bs.RemainBytes() < int(psm.Elementary_stream_map_length)+4 {
 		bs.UnRead(12*8 + int(psm.Program_stream_info_length)*8)
 		return errNeedMore
@@ -469,7 +469,8 @@ func (psm *Program_stream_map) Decode(bs *codec.BitStream) error {
 	}
 
 	if i != int(psm.Elementary_stream_map_length) {
-		return errParser
+		// return errParser
+		return nil
 	}
 
 	bs.SkipBits(32)
